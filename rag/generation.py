@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 # from google import genai
 from groq import Groq
+from functools import lru_cache
 
 load_dotenv()
 
@@ -9,9 +10,10 @@ load_dotenv()
 #     api_key=os.getenv("GEMINI_API_KEY")
 # )
 
-client=Groq(
-    api_key=os.getenv("GROQ_API_KEY")
-)
+def get_groq_client():
+    return Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+
 
 # def generate_answer(question:str):
 #     response=client.models.generate_content(
@@ -22,36 +24,40 @@ client=Groq(
 #     return response.text
 
 
-def generate_answer(question:str,retrieved_chunks:list):
+def generate_answer(question:str,retrieved_chunks:list,history:list=None):
 
     context="\n\n".join(
         chunk.content for chunk in retrieved_chunks
     )
 
-    prompt=f"""
-    You are an enterprise IT Support assistant
+    messages=[
+        {
+            "role":"system",
+            "content":f"""
+                    You are an enterprise IT support assistant.
 
-    Answer the users's question using ONLY theinformation provided in the context.
+                    Answer using ONLY the provided context.
+                    If the context is insufficient, say so.
 
-    If the context does not contain the answer,say that you do not have enough information
+                    Context:
+                    {context}
+                    """
+        }
+    ]
 
-    Context:
-    {context}
+    for msg in history or []:
+        messages.append({
+            "role":msg.role,
+            "content":msg.message
+        })
+    messages.append({
+        "role":"user",
+        "content":question
+    })
 
-    User Question:
-    {question}
-
-    Answer:
-            """
-
-    response=client.chat.completions.create(
+    response=get_groq_client().chat.completions.create(
         model="openai/gpt-oss-20b",
-        messages=[
-            {
-                "role":"user",
-                "content":prompt
-            }
-        ]
+        messages=messages
     )
 
     return response.choices[0].message.content

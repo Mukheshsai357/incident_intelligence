@@ -1,10 +1,13 @@
 from rag.retrieval import search_similar_chunks
 from rag.generation import generate_answer
+from rag.query_rewriting import rewrite_question
 
-def run_rag_pipeline(question:str): 
+def run_rag_pipeline(question: str,history: list = None): 
+
+    rewritten_question=rewrite_question(question,history)
     
     retrieved_chunks=search_similar_chunks(
-        question,
+        rewritten_question,
         top_k=3
     )
 
@@ -19,7 +22,7 @@ def run_rag_pipeline(question:str):
         return "I don't have enough information to answer this question."
 
     answer=generate_answer(
-        question,relevant_chunks
+        question,relevant_chunks,history
     )
 
 

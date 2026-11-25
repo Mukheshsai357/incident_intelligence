@@ -41,6 +41,16 @@ class ChatRequest(BaseModel):
     question:str=Field(min_length=1)
     session_id:str
 
+def get_chat_history(session_id:str,db:Session):
+    history=(
+        db.query(ChatMessage)
+        .filter(ChatMessage.session_id==session_id)
+        .order_by(ChatMessage.created_at.asc())
+        .all()
+    )
+
+    return history
+
 
 # Home endpoint
 @app.get("/")
@@ -53,6 +63,10 @@ def home():
 def chat(request:ChatRequest,db:Session=Depends(get_db)):
     try:
 
+        # Retriving the previous conversations of the session_id
+        history=get_chat_history(request.session_id,db)
+
+        # Saves the current user question
         user_message=ChatMessage(
             session_id=request.session_id,
             role="user",
@@ -62,8 +76,10 @@ def chat(request:ChatRequest,db:Session=Depends(get_db)):
         db.add(user_message)
         db.commit()
 
-        answer=run_rag_pipeline(request.question)
+        #Generate answer using conversation history
+        answer=run_rag_pipeline(request.question,history)
 
+        # saves assistant response
         assist_message=ChatMessage(
             session_id=request.session_id,
             role="assistant",
@@ -125,3 +141,19 @@ def predict_priority(
             status_code=500,
             detail="Prediction or database operation failed"
         )
+
+
+@app.get("/chat/history/{session_id}")
+def chat_history(
+    session_id:str,
+    db:Session=Depends(get_db)
+):
+    history=get_chat_history(session_id,db)
+
+    return [
+        {
+            "role":message.role,
+            "message":message.message
+        }
+        for message in history
+    ]
