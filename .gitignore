@@ -16,7 +16,7 @@ __pycache__/
 .vscode/
 
 # Model files
-*.pkl
+# *.pkl
 
 # OS files
 .DS_Store

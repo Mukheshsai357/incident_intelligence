@@ -1,0 +1,26 @@
+# Core API
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+
+# Data processing and machine learning
+pandas
+numpy
+scikit-learn
+joblib
+
+# Database and vector search
+sqlalchemy
+psycopg2-binary
+pgvector
+
+# Embeddings and LLM
+sentence-transformers
+groq
+
+# Development and notebooks
+jupyter
+notebook
+matplotlib
+seaborn
